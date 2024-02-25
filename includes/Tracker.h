@@ -9,6 +9,9 @@
 #include "BYTETracker.h"
 #include <memory>
 
+#define MAX_TARGETS_PER_STREAM 512
+
+
 /**
 * @brief Context for input video streams
 *
@@ -16,11 +19,12 @@
 * within the stream.
 *
 */
-class NvMOTContext {
+class NvMOTContext
+{
 public:
-    NvMOTContext(const NvMOTConfig &configIn, NvMOTConfigResponse &configResponse);
+    NvMOTContext(const NvMOTConfig &configIn, NvMOTConfigResponse& configResponse);
 
-    ~NvMOTContext() {};
+    ~NvMOTContext();
 
     /**
      * @brief Process a batch of frames
@@ -31,19 +35,17 @@ public:
      * @param [out] pTrackedObjectsBatch Pointer to object tracks output
      */
     NvMOTStatus processFrame(const NvMOTProcessParams *params,
-                             NvMOTTrackedObjBatch *pTrackedObjectsBatch);
-
+                                   NvMOTTrackedObjBatch *pTrackedObjectsBatch);
     /**
-     * @brief Output the past-frame data if there are
+     * @brief Output the miscellaneous data if there are
      *
-     *  Internal implementation of NvMOT_ProcessPast()
+     *  Internal implementation of retrieveMiscData()
      *
      * @param [in] pParam Pointer to parameters for the frame to be processed
-     * @param [out] pPastFrameObjectsBatch Pointer to past frame object tracks output
+     * @param [out] pTrackerMiscData Pointer to miscellaneous data output
      */
-    NvMOTStatus processFramePast(const NvMOTProcessParams *params,
-                                 NvDsPastFrameObjBatch *pPastFrameObjectsBatch);
-
+    NvMOTStatus retrieveMiscData(const NvMOTProcessParams *params,
+                                   NvMOTTrackerMiscData *pTrackerMiscData);
     /**
      * @brief Terminate trackers and release resources for a stream when the stream is removed
      *

@@ -6,6 +6,10 @@ NvMOTContext::NvMOTContext(const NvMOTConfig &configIn, NvMOTConfigResponse &con
     configResponse.summaryStatus = NvMOTConfigStatus_OK;
 }
 
+NvMOTContext::~NvMOTContext()
+{
+}
+
 NvMOTStatus NvMOTContext::processFrame(const NvMOTProcessParams *params, NvMOTTrackedObjBatch *pTrackedObjectsBatch) {
     for (uint streamIdx = 0; streamIdx < pTrackedObjectsBatch->numFilled; streamIdx++){
         NvMOTTrackedObjList   *trackedObjList = &pTrackedObjectsBatch->list[streamIdx];
@@ -14,8 +18,8 @@ NvMOTStatus NvMOTContext::processFrame(const NvMOTProcessParams *params, NvMOTTr
         for (uint32_t numObjects = 0; numObjects < frame->objectsIn.numFilled; numObjects++) {
             NvMOTObjToTrack *objectToTrack = &frame->objectsIn.list[numObjects];
             NvObject nvObject;
-            nvObject.prob    = objectToTrack->confidence;
-            nvObject.label   = objectToTrack->classId;
+            nvObject.prob = objectToTrack->confidence;
+            nvObject.label = objectToTrack->classId;
             nvObject.rect[0] = objectToTrack->bbox.x;
             nvObject.rect[1] = objectToTrack->bbox.y;
             nvObject.rect[2] = objectToTrack->bbox.width;
@@ -29,21 +33,31 @@ NvMOTStatus NvMOTContext::processFrame(const NvMOTProcessParams *params, NvMOTTr
 
         std::vector<STrack> outputTracks = byteTrackerMap.at(frame->streamID)->update(nvObjects);
 
-        NvMOTTrackedObj *trackedObjs = new NvMOTTrackedObj[512];
-        int             filled       = 0;
+        if (trackedObjList->numAllocated != MAX_TARGETS_PER_STREAM)
+        {
+            // Reallocate memory space
+            delete trackedObjList->list;
+            trackedObjList->list = new NvMOTTrackedObj[MAX_TARGETS_PER_STREAM];
+        }
+        // This should resolve the memory leak issue:
+        //   https://github.com/ifzhang/ByteTrack/issues/276
+        NvMOTTrackedObj *trackedObjs = trackedObjList->list;
+        int filled = 0;
 
         for (STrack &sTrack: outputTracks) {
-            std::vector<float> tlwh        = sTrack.original_tlwh;
-            NvMOTRect          motRect{tlwh[0], tlwh[1], tlwh[2], tlwh[3]};
-            NvMOTTrackedObj    *trackedObj             = new NvMOTTrackedObj;
-            trackedObj->classId                        = 0;
-            trackedObj->trackingId                     = (uint64_t) sTrack.track_id;
-            trackedObj->bbox                           = motRect;
-            trackedObj->confidence                     = 1;
-            trackedObj->age                            = (uint32_t) sTrack.tracklet_len;
-            trackedObj->associatedObjectIn             = sTrack.associatedObjectIn;
+            if (filled >= MAX_TARGETS_PER_STREAM)
+                break;
+            std::vector<float> tlwh = sTrack.original_tlwh;
+            NvMOTRect motRect{tlwh[0], tlwh[1], tlwh[2], tlwh[3]};
+            NvMOTTrackedObj *trackedObj = &trackedObjs[filled];
+            trackedObj->classId = 0;
+            trackedObj->trackingId = (uint64_t) sTrack.track_id;
+            trackedObj->bbox = motRect;
+            trackedObj->confidence = 1;
+            trackedObj->age = (uint32_t) sTrack.tracklet_len;
+            trackedObj->associatedObjectIn = sTrack.associatedObjectIn;
             trackedObj->associatedObjectIn->doTracking = true;
-            trackedObjs[filled++]                      = *trackedObj;
+            filled++;
         }
 
         trackedObjList->streamID     = frame->streamID;
@@ -51,12 +65,13 @@ NvMOTStatus NvMOTContext::processFrame(const NvMOTProcessParams *params, NvMOTTr
         trackedObjList->valid        = true;
         trackedObjList->list         = trackedObjs;
         trackedObjList->numFilled    = filled;
-        trackedObjList->numAllocated = 512;
+        trackedObjList->numAllocated = MAX_TARGETS_PER_STREAM;
     }
+    return NvMOTStatus_OK;
 }
 
-NvMOTStatus NvMOTContext::processFramePast(const NvMOTProcessParams *params,
-                                           NvDsPastFrameObjBatch *pPastFrameObjectsBatch) {
+NvMOTStatus NvMOTContext::retrieveMiscData(const NvMOTProcessParams *params,
+                                 NvMOTTrackerMiscData *pTrackerMiscData){
     return NvMOTStatus_OK;
 }
 
