@@ -1,11 +1,17 @@
 # Byte-Track Integration with Deepstream 6.4
-**Important!! This is not the official code.**
+
+This code is based on the [official code](https://github.com/ifzhang/ByteTrack).
 
 Integrating Byte-Track C++ code with the Deepstream-6.4.
 
 Features:
-* Only support for DeepStream 6.4. For older verions, please refer to the [official code](https://github.com/ifzhang/ByteTrack).
-* Support multi-stream
+* Only support for DeepStream 6.4. For other verions, please refer to the [official code](https://github.com/ifzhang/ByteTrack).
+* Support multi-streams
+
+
+
+https://github.com/Ending2015a/ByteTrack-DS6.4/assets/18180004/8e98ebf0-e9dd-4c9a-b845-810590b3f279
+
 
 
 ## Build Instructions
