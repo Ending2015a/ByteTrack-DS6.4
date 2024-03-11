@@ -7,6 +7,7 @@ Integrating Byte-Track C++ code with the Deepstream-6.4.
 Features:
 * Only support for DeepStream 6.4. For other verions, please refer to the [official code](https://github.com/ifzhang/ByteTrack).
 * Support multi-streams
+* The [memory leak issue](https://github.com/ifzhang/ByteTrack/issues/276) should be resolved.
 
 
 
